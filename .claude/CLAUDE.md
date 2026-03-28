@@ -35,6 +35,6 @@ Tests use a mock Supabase client that simulates the chainable query builder patt
 
 ## Related
 
-- zodal monorepo: `/Users/thorwhalen/Dropbox/py/proj/i/zodal/`
-- Store adapter skill: zodal monorepo `.claude/skills/zodal-store-adapter/SKILL.md`
-- Reference in-memory provider: zodal monorepo `packages/store/src/in-memory.ts`
+- zodal monorepo: https://github.com/i2mint/zodal
+- Store adapter skill: https://github.com/i2mint/zodal/tree/main/.claude/skills/zodal-store-adapter
+- Reference in-memory provider: https://github.com/i2mint/zodal/tree/main/packages/store/src/in-memory.ts
