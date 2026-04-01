@@ -18,6 +18,7 @@ function createMockSupabaseClient(initialData: TestItem[] = []) {
     let rangeEnd: number | undefined;
     let sorts: { column: string; ascending: boolean }[] = [];
     let isSingle = false;
+    let pendingDelete = false;
 
     const builder: any = {
       select(columns: string, opts?: { count: string }) {
@@ -104,10 +105,15 @@ function createMockSupabaseClient(initialData: TestItem[] = []) {
         return builder;
       },
       delete() {
-        items = items.filter(i => !filteredItems.includes(i));
+        pendingDelete = true;
         return builder;
       },
       then(resolve: any) {
+        // Apply pending delete after all filters have been chained
+        if (pendingDelete) {
+          items = items.filter(i => !filteredItems.includes(i));
+        }
+
         // Apply sorts
         for (const s of sorts) {
           filteredItems.sort((a: any, b: any) => {
