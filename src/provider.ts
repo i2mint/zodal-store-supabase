@@ -67,7 +67,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
       if (error) throw new Error(`Supabase error: ${error.message}`);
 
       return {
-        data: (data ?? []) as T[],
+        data: (data ?? []) as unknown as T[],
         total: count ?? 0,
       };
     },
@@ -84,7 +84,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
         throw new Error(`Supabase error: ${error.message}`);
       }
 
-      return data as T;
+      return data as unknown as T;
     },
 
     async create(data: Partial<T>): Promise<T> {
@@ -95,7 +95,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
         .single();
 
       if (error) throw new Error(`Supabase error: ${error.message}`);
-      return created as T;
+      return created as unknown as T;
     },
 
     async update(id: string, data: Partial<T>): Promise<T> {
@@ -111,7 +111,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
         throw new Error(`Supabase error: ${error.message}`);
       }
 
-      return updated as T;
+      return updated as unknown as T;
     },
 
     async updateMany(ids: string[], data: Partial<T>): Promise<T[]> {
@@ -122,7 +122,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
         .select(select);
 
       if (error) throw new Error(`Supabase error: ${error.message}`);
-      return (updated ?? []) as T[];
+      return (updated ?? []) as unknown as T[];
     },
 
     async delete(id: string): Promise<void> {
@@ -151,7 +151,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
         .single();
 
       if (error) throw new Error(`Supabase error: ${error.message}`);
-      return result as T;
+      return result as unknown as T;
     },
 
     getCapabilities(): ProviderCapabilities {
