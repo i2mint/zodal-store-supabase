@@ -1,6 +1,6 @@
 {
   "name": "@zodal/store-supabase",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "zodal DataProvider adapter for Supabase (PostgreSQL via PostgREST)",
   "type": "module",
   "main": "dist/index.cjs",
@@ -25,13 +25,13 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@zodal/core": "^0.1.0",
-    "@zodal/store": "^0.1.0",
+    "@zodal/core": "^0.2.0",
+    "@zodal/store": "^0.2.0",
     "@supabase/supabase-js": "^2.0.0"
   },
   "devDependencies": {
-    "@zodal/core": "^0.1.0",
-    "@zodal/store": "^0.1.0",
+    "@zodal/core": "^0.2.0",
+    "@zodal/store": "^0.2.0",
     "@supabase/supabase-js": "^2.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.7.0",
