@@ -13,11 +13,14 @@ src/
   filter-translator.ts  # FilterExpression -> PostgREST query builder calls / logic trees
   storage-provider.ts   # createSupabaseBifurcatedProvider (table metadata + Storage content)
   blob-provider.ts      # createSupabaseStorageBlobProvider
+  capabilities.ts       # tableCapabilities(searchColumns): shared by the providers and the descriptors
+  descriptor.ts         # provider descriptors: descriptor (supabase), supabaseBifurcatedDescriptor, storageBlobDescriptor
 tests/
   mock-supabase.ts           # In-memory PostgREST evaluator (filters, or/not trees, order, range, count)
   provider.test.ts           # Unit tests over the mock
   filter-translator.test.ts  # Exact PostgREST calls + what they select + what throws
   contract.test.ts           # @zodal/store/testing conformance kit (table + bifurcated provider)
+  descriptor.test.ts         # the kit through createFromDescriptor; live client, validation, capabilities
 ```
 
 ## Key Design Decisions
@@ -28,13 +31,15 @@ tests/
 - **Client-side fallback**: none. Everything is server-side, so `applyQuery` from `@zodal/store` is not used.
 - **Search**: OR clause across configurable `searchColumns` using `ilike`.
 - **Pagination**: Offset-based via `.range(start, end)` with 1-based page numbers.
-- **Capabilities**: Honestly reported via `getCapabilities()` -- all server-side features enabled.
+- **Capabilities**: Honestly reported via `getCapabilities()` -- all server-side features enabled (`tableCapabilities()` in `src/capabilities.ts`; search only with `searchColumns`).
+- **Descriptors** (`src/descriptor.ts`, built with `defineProviderDescriptor` from `@zodal/store/descriptor`): `client` is a `z.custom()` (live, never shared) checked for `.from` / `.storage.from`; no factory builds its own client, so there is no credential among the data options. Capabilities are a function of the options. Keep each options schema in step with its factory's options (validation strips undeclared keys). The bifurcated one is `supabaseBifurcatedDescriptor` (`bifurcatedDescriptor` is the generic composite in `@zodal/store`).
 
 ## Dependencies
 
 - `@zodal/core` -- types (`FilterExpression`, `FilterCondition`, `SortingState`)
 - `@zodal/store` -- interface (`DataProvider`, `GetListParams`, `GetListResult`, `ProviderCapabilities`)
 - `@supabase/supabase-js` -- Supabase client (peer dependency)
+- `zod` (peer) -- the descriptors' options schemas
 
 ## Testing
 

@@ -8,6 +8,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DataProvider, GetListParams, GetListResult, ProviderCapabilities } from '@zodal/store';
 import { applyFilter, searchClause } from './filter-translator.js';
+import { tableCapabilities } from './capabilities.js';
 
 export interface SupabaseProviderOptions {
   /** Supabase client instance. */
@@ -155,28 +156,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
     },
 
     getCapabilities(): ProviderCapabilities {
-      return {
-        canCreate: true,
-        canUpdate: true,
-        canDelete: true,
-        canBulkUpdate: true,
-        canBulkDelete: true,
-        canUpsert: true,
-        serverSort: true,
-        serverFilter: true,
-        serverSearch: searchColumns.length > 0,
-        serverPagination: true,
-        paginationStyle: 'offset',
-        filterOperators: {
-          '*': [
-            'eq', 'ne', 'gt', 'gte', 'lt', 'lte',
-            'contains', 'startsWith', 'endsWith',
-            'in', 'notIn',
-            'arrayContains', 'arrayContainsAny',
-            'isNull', 'isNotNull',
-          ],
-        },
-      };
+      return tableCapabilities(searchColumns);
     },
   };
 }

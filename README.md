@@ -7,14 +7,14 @@ This is the **most capable adapter** in the zodal ecosystem -- it supports full 
 ## Install
 
 ```bash
-npm install zodal-store-supabase @supabase/supabase-js @zodal/core @zodal/store
+npm install @zodal/store-supabase @supabase/supabase-js @zodal/core @zodal/store zod
 ```
 
 ## Quick Start
 
 ```typescript
 import { createClient } from '@supabase/supabase-js';
-import { createSupabaseProvider } from 'zodal-store-supabase';
+import { createSupabaseProvider } from '@zodal/store-supabase';
 
 const supabase = createClient('https://your-project.supabase.co', 'your-anon-key');
 
@@ -67,6 +67,24 @@ await provider.delete(created.id);
 Compound filters (`and`, `or`, `not`) are supported, nested to any depth. `and` chains sequentially; `or` and `not` become a PostgREST logic tree passed to `.or()` (`not` over a compound is sent as `or=(not.or(...))` / `or=(not.and(...))`). A filter that cannot be expressed (an unknown operator, an empty `or`, a `null` value inside `or`/`not`) throws `UnsupportedFilterError` instead of being dropped.
 
 `delete` of a missing id rejects with `Item not found`; `updateMany` / `deleteMany` skip missing ids.
+
+## Use from a menu
+
+Each provider is also exported as a descriptor (`@zodal/store` ≥ 0.2.2): name, runtime, options as a Zod schema and capabilities, so an app, a playground or an agent can list it and create it by name.
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+import { createFromDescriptor, describedCapabilities, splitOptions } from '@zodal/store/descriptor';
+import { descriptor, supabaseBifurcatedDescriptor, storageBlobDescriptor } from '@zodal/store-supabase';
+// 'supabase', 'supabaseBifurcated', 'supabaseStorageBlob'
+
+const options = { client: createClient(url, anonKey), table: 'projects', searchColumns: ['name'] };
+describedCapabilities(descriptor, options).serverSearch; // true: search needs searchColumns
+const provider = await createFromDescriptor(descriptor, options);
+splitOptions(descriptor, options).data; // { table: 'projects', searchColumns: ['name'] }: the client is left out
+```
+
+`client` (which holds the project URL and key) is a live option: supplied in code, never shown, shared or exported, so no credential appears among the data options. `supabaseBifurcatedDescriptor` is marked `composite`; for a cross-backend split, give `storageBlobDescriptor` to `bifurcatedDescriptor` from `@zodal/store/descriptor`.
 
 ## How It Works
 
