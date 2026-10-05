@@ -64,7 +64,9 @@ await provider.delete(created.id);
 
 `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `contains`, `startsWith`, `endsWith`, `in`, `notIn`, `arrayContains`, `arrayContainsAny`, `isNull`, `isNotNull`
 
-Compound filters (`and`, `or`, `not`) are supported. `and` chains sequentially; `or` uses PostgREST's `.or()` syntax; `not` negates leaf conditions.
+Compound filters (`and`, `or`, `not`) are supported, nested to any depth. `and` chains sequentially; `or` and `not` become a PostgREST logic tree passed to `.or()` (`not` over a compound is sent as `or=(not.or(...))` / `or=(not.and(...))`). A filter that cannot be expressed (an unknown operator, an empty `or`, a `null` value inside `or`/`not`) throws `UnsupportedFilterError` instead of being dropped.
+
+`delete` of a missing id rejects with `Item not found`; `updateMany` / `deleteMany` skip missing ids.
 
 ## How It Works
 

@@ -6,9 +6,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { FilterExpression } from '@zodal/core';
 import type { DataProvider, GetListParams, GetListResult, ProviderCapabilities } from '@zodal/store';
-import { applyFilter } from './filter-translator.js';
+import { applyFilter, searchClause } from './filter-translator.js';
 
 export interface SupabaseProviderOptions {
   /** Supabase client instance. */
@@ -41,10 +40,7 @@ export function createSupabaseProvider<T extends Record<string, any>>(
 
       // Apply search (OR across searchColumns using ilike)
       if (params.search && searchColumns.length > 0) {
-        const orClause = searchColumns
-          .map(col => `${col}.ilike.%${params.search}%`)
-          .join(',');
-        query = query.or(orClause);
+        query = query.or(searchClause(searchColumns, params.search));
       }
 
       // Apply sorting
@@ -126,12 +122,16 @@ export function createSupabaseProvider<T extends Record<string, any>>(
     },
 
     async delete(id: string): Promise<void> {
-      const { error } = await client
+      // PostgREST resolves a delete that matched no row, so ask for the deleted
+      // rows back and reject when there are none (the DataProvider contract).
+      const { data, error } = await client
         .from(table)
         .delete()
-        .eq(idField, id);
+        .eq(idField, id)
+        .select(idField);
 
       if (error) throw new Error(`Supabase error: ${error.message}`);
+      if (!data || data.length === 0) throw new Error(`Item not found: ${id}`);
     },
 
     async deleteMany(ids: string[]): Promise<void> {
@@ -168,7 +168,13 @@ export function createSupabaseProvider<T extends Record<string, any>>(
         serverPagination: true,
         paginationStyle: 'offset',
         filterOperators: {
-          '*': ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'in', 'isNull', 'isNotNull'],
+          '*': [
+            'eq', 'ne', 'gt', 'gte', 'lt', 'lte',
+            'contains', 'startsWith', 'endsWith',
+            'in', 'notIn',
+            'arrayContains', 'arrayContainsAny',
+            'isNull', 'isNotNull',
+          ],
         },
       };
     },
