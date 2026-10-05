@@ -153,6 +153,14 @@ export function createSupabaseBifurcatedProvider<T extends Record<string, any>>(
     await client.storage.from(storageBucket).remove(paths);
   }
 
+  async function exists(id: string): Promise<boolean> {
+    const { total } = await metaProvider.getList({
+      filter: { field: idField, operator: 'eq', value: id },
+      pagination: { page: 1, pageSize: 1 },
+    });
+    return total > 0;
+  }
+
   // --- Field splitting ---
 
   function splitData(data: Record<string, any>): { meta: Record<string, any>; content: Record<string, any> } {
@@ -194,8 +202,15 @@ export function createSupabaseBifurcatedProvider<T extends Record<string, any>>(
     },
 
     async create(data: Partial<T>): Promise<T> {
-      const id = String((data as any)[idField] ?? crypto.randomUUID());
+      const given = (data as any)[idField];
+      const id = String(given ?? crypto.randomUUID());
       const { meta, content } = splitData({ ...data, [idField]: id } as Record<string, any>);
+
+      // A create with an existing id is refused by the table, but only after the
+      // upload, which would overwrite that item's content: check first.
+      if (given != null && Object.keys(content).length > 0 && (await exists(id))) {
+        throw new Error(`Item already exists: ${id}`);
+      }
 
       // Upload content first (to get size/mime for metadata)
       const refMeta: Record<string, any> = {};
@@ -233,7 +248,13 @@ export function createSupabaseBifurcatedProvider<T extends Record<string, any>>(
     },
 
     async updateMany(ids: string[], data: Partial<T>): Promise<T[]> {
-      return Promise.all(ids.map(id => this.update(id, data)));
+      // Ids with no item are skipped (the DataProvider contract), and get no content uploaded.
+      if (ids.length === 0) return [];
+      const { data: found } = await metaProvider.getList({
+        filter: { field: idField, operator: 'in', value: ids },
+      });
+      const existing = found.map(item => String(item[idField]));
+      return Promise.all(existing.map(id => this.update(id, data)));
     },
 
     async delete(id: string): Promise<void> {
@@ -242,13 +263,19 @@ export function createSupabaseBifurcatedProvider<T extends Record<string, any>>(
     },
 
     async deleteMany(ids: string[]): Promise<void> {
-      await Promise.all(ids.map(id => this.delete(id)));
+      // Ids with no item are skipped (the DataProvider contract): `delete` now rejects
+      // on a missing id, so this no longer goes through it.
+      if (ids.length === 0) return;
+      await Promise.all(ids.map(id => deleteContent(id)));
+      await metaProvider.deleteMany(ids);
     },
 
     getCapabilities(): ProviderCapabilities {
       const metaCaps = metaProvider.getCapabilities!();
       return {
         ...metaCaps,
+        // This provider has no `upsert` method.
+        canUpsert: false,
         ...({ bifurcated: true, contentFields } as any),
       };
     },

@@ -1,5 +1,6 @@
 export { createSupabaseProvider } from './provider.js';
 export type { SupabaseProviderOptions } from './provider.js';
+export { applyFilter, toLogicTree, UnsupportedFilterError } from './filter-translator.js';
 
 // Supabase bifurcated: PostgreSQL metadata + Supabase Storage content
 export { createSupabaseBifurcatedProvider } from './storage-provider.js';
